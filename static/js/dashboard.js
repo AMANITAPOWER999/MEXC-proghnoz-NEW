@@ -436,11 +436,6 @@ class TradingDashboard {
         // Play beep sound
         this._playBeep(dir === 'long' ? 880 : 440);
 
-        // Show notification
-        const dirLabel = dir === 'long' ? '▲ UP / LONG' : '▼ DOWN / SHORT';
-        const durLabel = { 600: '10m', 1800: '30m', 3600: '60m' }[this._activeDuration] || '';
-        const tfsLabel = (this._strategyTfs || []).join('+') || '?';
-        this.showNotification('signal', `🔔 Сигнал ${dirLabel} [${tfsLabel}] — время ${durLabel}`, 8000);
     }
 
     _onSignalLost() {
