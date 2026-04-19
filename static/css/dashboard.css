@@ -458,8 +458,8 @@ h1,h2,h3,h4,h5,h6,p,span,td,th,strong,small,label { color: inherit; }
 .sar-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 9px 12px;
+    gap: 8px;
+    padding: 8px 10px;
     background: var(--bg-card);
     border-radius: var(--radius-sm);
     border-left: 3px solid var(--border-act);
@@ -467,11 +467,49 @@ h1,h2,h3,h4,h5,h6,p,span,td,th,strong,small,label { color: inherit; }
 }
 .sar-row.text-success { border-left-color: var(--green); }
 .sar-row.text-danger  { border-left-color: var(--red); }
-.sar-level { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.sar-level {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex: 1;
+}
+
 .sar-badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px; }
 .sar-badge.bg-success { background: var(--green) !important; color: #fff; animation: pulse-badge 2s infinite; }
 .sar-badge.bg-danger  { background: var(--red)   !important; color: #fff; animation: pulse-badge 2s infinite; }
 .sar-badge.bg-secondary { background: var(--bg-card) !important; color: var(--text-dim); border: 1px solid var(--border); }
+
+/* Inline level button (next to each SAR row) */
+.lvl-btn--inline {
+    flex-shrink: 0;
+    width: 32px;
+    height: 26px;
+    padding: 0;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--bg-base);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+    text-align: center;
+    line-height: 24px;
+}
+.lvl-btn--inline:hover {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    border-color: var(--border-act);
+}
+.lvl-btn--inline.active-setting {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+    box-shadow: 0 0 8px rgba(59,130,246,0.4);
+}
 
 /* ═══════════════════════════════════════════
    PAYOUT GRID

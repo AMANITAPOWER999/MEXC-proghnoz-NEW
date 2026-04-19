@@ -284,18 +284,18 @@ class TradingDashboard {
 
     syncLevelButtons(activeLevel) {
         this._strategyLevel = parseInt(activeLevel);
-        document.querySelectorAll('.lvl-btn').forEach(btn => {
+        document.querySelectorAll('.lvl-btn--inline').forEach(btn => {
             btn.classList.toggle('active-setting', parseInt(btn.dataset.level) === this._strategyLevel);
         });
         const labels = {
-            1: 'L1 · SAR 1m',
+            1: 'L1 · 1m',
             2: 'L2 · 1m+3m',
             3: 'L3 · 1m+3m+5m',
-            4: 'L4 · 1m+3m+5m+15m',
+            4: 'L4 · 1m…15m',
             5: 'L5 · все ТФ',
         };
         const lbl = document.getElementById('strategy-level-label');
-        if (lbl) lbl.textContent = labels[this._strategyLevel] || `Level ${this._strategyLevel}`;
+        if (lbl) lbl.textContent = labels[this._strategyLevel] || `L${this._strategyLevel}`;
     }
 
     async setStrategyLevel(level) {

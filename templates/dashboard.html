@@ -138,39 +138,33 @@
             <div class="panel">
                 <div class="panel__header">
                     <span><i class="fas fa-satellite-dish"></i> SAR Сигнал</span>
-                    <span id="strategy-level-label" class="badge bg-primary" style="font-size:11px">Level 3</span>
+                    <span id="strategy-level-label" class="badge bg-primary" style="font-size:11px">L3 · 1m+3m+5m</span>
                 </div>
                 <div class="panel__body">
 
-                    <!-- Strategy Level Selector -->
-                    <div class="mb-3">
-                        <div class="seg-ctrl w-100">
-                            <button class="seg-btn seg-btn--blue lvl-btn flex-fill" data-level="1" onclick="window.dashboard.setStrategyLevel(1)">L1</button>
-                            <button class="seg-btn seg-btn--blue lvl-btn flex-fill" data-level="2" onclick="window.dashboard.setStrategyLevel(2)">L2</button>
-                            <button class="seg-btn seg-btn--blue lvl-btn flex-fill active-setting" data-level="3" onclick="window.dashboard.setStrategyLevel(3)">L3</button>
-                            <button class="seg-btn seg-btn--blue lvl-btn flex-fill" data-level="4" onclick="window.dashboard.setStrategyLevel(4)">L4</button>
-                            <button class="seg-btn seg-btn--blue lvl-btn flex-fill" data-level="5" onclick="window.dashboard.setStrategyLevel(5)">L5</button>
-                        </div>
-                    </div>
-
-                    <!-- SAR Rows -->
+                    <!-- SAR Rows with inline level buttons -->
                     <div class="sar-row mb-2" id="sar-1m-container">
+                        <button class="lvl-btn lvl-btn--inline" data-level="1" onclick="window.dashboard.setStrategyLevel(1)" title="Стратегия L1 — только 1m">L1</button>
                         <span class="sar-level">SAR <span class="text-muted" style="font-size:11px">1m</span></span>
                         <span id="sar-1m" class="badge sar-badge">N/A</span>
                     </div>
                     <div class="sar-row mb-2" id="sar-3m-container">
+                        <button class="lvl-btn lvl-btn--inline" data-level="2" onclick="window.dashboard.setStrategyLevel(2)" title="Стратегия L2 — 1m+3m">L2</button>
                         <span class="sar-level">SAR <span class="text-muted" style="font-size:11px">3m</span></span>
                         <span id="sar-3m" class="badge sar-badge">N/A</span>
                     </div>
                     <div class="sar-row mb-2" id="sar-5m-container">
+                        <button class="lvl-btn lvl-btn--inline" data-level="3" onclick="window.dashboard.setStrategyLevel(3)" title="Стратегия L3 — 1m+3m+5m">L3</button>
                         <span class="sar-level">SAR <span class="text-muted" style="font-size:11px">5m</span></span>
                         <span id="sar-5m" class="badge sar-badge">N/A</span>
                     </div>
                     <div class="sar-row mb-2" id="sar-15m-container">
+                        <button class="lvl-btn lvl-btn--inline" data-level="4" onclick="window.dashboard.setStrategyLevel(4)" title="Стратегия L4 — 1m+3m+5m+15m">L4</button>
                         <span class="sar-level">SAR <span class="text-muted" style="font-size:11px">15m</span></span>
                         <span id="sar-15m" class="badge sar-badge">N/A</span>
                     </div>
                     <div class="sar-row mb-2" id="sar-30m-container">
+                        <button class="lvl-btn lvl-btn--inline" data-level="5" onclick="window.dashboard.setStrategyLevel(5)" title="Стратегия L5 — все ТФ">L5</button>
                         <span class="sar-level">SAR <span class="text-muted" style="font-size:11px">30m</span></span>
                         <span id="sar-30m" class="badge sar-badge">N/A</span>
                     </div>
