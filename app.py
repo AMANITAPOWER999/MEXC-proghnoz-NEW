@@ -63,6 +63,38 @@ def bot_main_loop():
         logging.error(f"Bot error: {e}")
         bot_running = False
 
+# ── Фоновый апдейтер SAR — работает всегда, независимо от состояния бота ──
+_sar_worker = None
+
+def _sar_updater_loop():
+    """Тихий фоновый поток: обновляет SAR-направления каждые 5 сек с реального MEXC"""
+    import time
+    try:
+        helper = TradingBot(telegram_notifier=None)
+        logging.info("SAR background helper initialized (MEXC real data)")
+    except Exception as e:
+        logging.error(f"SAR updater init error: {e}")
+        return
+    while True:
+        try:
+            dirs = helper.get_current_directions()
+            if dirs and any(v is not None for v in dirs.values()):
+                state['sar_directions'] = dirs
+                logging.debug(f"SAR updated: {dirs}")
+            price = helper.get_current_price()
+            if price and price > 0:
+                state['last_known_price'] = price
+        except Exception as e:
+            logging.warning(f"SAR updater fetch error: {e}")
+        time.sleep(5)
+
+def start_sar_updater():
+    global _sar_worker
+    if _sar_worker is None or not _sar_worker.is_alive():
+        _sar_worker = threading.Thread(target=_sar_updater_loop, daemon=True)
+        _sar_worker.start()
+        logging.info("SAR background updater started")
+
 @app.route('/')
 def index():
     """Главная страница - дашборд"""
@@ -86,8 +118,12 @@ def api_status():
         if not directions or all(v is None for v in directions.values()):
             directions = state.get('sar_directions', {tf: None for tf in ['1m', '3m', '5m', '15m', '30m']})
         
-        # Получаем текущую цену
-        current_price = bot_instance.get_current_price() if bot_instance else 3000.0
+        # Получаем текущую цену (из апдейтера или бота)
+        current_price = (
+            bot_instance.get_current_price()
+            if bot_instance
+            else state.get('last_known_price', 0.0)
+        )
         
         return jsonify({
             'bot_running': bot_running,
@@ -540,8 +576,9 @@ def telegram_webhook():
     
     return 'OK', 200
 
-# Инициализация Telegram при загрузке модуля
+# Инициализация при загрузке модуля
 init_telegram()
+start_sar_updater()
 
 # Настройка Telegram WebApp
 try:

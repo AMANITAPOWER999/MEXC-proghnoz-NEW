@@ -123,21 +123,47 @@ class TradingBot:
     def now(self):
         return datetime.utcnow()
 
+    # Таймфреймы, которые MEXC не поддерживает и которые нужно синтезировать
+    _SYNTH_TFS = {
+        "3m": ("1m", 3),   # 3m = resampled 1m × 3
+        "2m": ("1m", 2),
+        "10m": ("5m", 2),
+    }
+
     def fetch_ohlcv_tf(self, tf: str, limit=200):
         """
-        Возвращает pd.DataFrame с колонками: timestamp, open, high, low, close, volume
+        Возвращает pd.DataFrame с колонками: timestamp, open, high, low, close, volume.
+        Если tf не поддерживается биржей напрямую — синтезируется ресемплингом.
         """
         try:
+            # Синтез неподдерживаемых TF через ресемплинг
+            if not USE_SIMULATOR and tf in self._SYNTH_TFS:
+                base_tf, factor = self._SYNTH_TFS[tf]
+                raw = self.exchange.fetch_ohlcv(SYMBOL, timeframe=base_tf, limit=limit * factor)
+                if not raw:
+                    return None
+                df = pd.DataFrame(raw, columns=["timestamp", "open", "high", "low", "close", "volume"])
+                df["datetime"] = pd.to_datetime(df["timestamp"], unit="ms")
+                df = df.set_index("datetime")
+                rule = f"{factor}min"
+                resampled = df.resample(rule).agg({
+                    "timestamp": "first",
+                    "open":      "first",
+                    "high":      "max",
+                    "low":       "min",
+                    "close":     "last",
+                    "volume":    "sum",
+                }).dropna(subset=["open"]).tail(limit).reset_index(drop=True)
+                return resampled
+
             if USE_SIMULATOR and self.simulator:
-                # Используем симулятор
                 ohlcv = self.simulator.fetch_ohlcv(tf, limit=limit)
             else:
-                # Используем реальную биржу
                 ohlcv = self.exchange.fetch_ohlcv(SYMBOL, timeframe=tf, limit=limit)
-            
+
             if not ohlcv:
                 return None
-                
+
             df = pd.DataFrame(ohlcv)
             df.columns = ["timestamp", "open", "high", "low", "close", "volume"]
             df["datetime"] = pd.to_datetime(df["timestamp"], unit="ms")
