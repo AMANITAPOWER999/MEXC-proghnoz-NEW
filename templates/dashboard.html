@@ -86,6 +86,30 @@
                         <button class="seg-btn seg-btn--amber dur-btn"                data-dur="3600" onclick="window.dashboard.setDuration(3600)">60m</button>
                     </div>
                 </div>
+                <div class="settings-divider"></div>
+                <!-- Payout percentages per time period -->
+                <div class="payout-table">
+                    <div class="payout-header">
+                        <span>Period</span>
+                        <span class="text-success">▲ Up</span>
+                        <span class="text-danger">▼ Down</span>
+                    </div>
+                    <div class="payout-row" data-dur="600">
+                        <span class="payout-period">10m</span>
+                        <span class="payout-val payout-up" data-dur="600" onclick="window.dashboard.editPayout(600,'up')" title="Click to edit">—</span>
+                        <span class="payout-val payout-dn" data-dur="600" onclick="window.dashboard.editPayout(600,'down')" title="Click to edit">—</span>
+                    </div>
+                    <div class="payout-row" data-dur="1800">
+                        <span class="payout-period">30m</span>
+                        <span class="payout-val payout-up" data-dur="1800" onclick="window.dashboard.editPayout(1800,'up')" title="Click to edit">—</span>
+                        <span class="payout-val payout-dn" data-dur="1800" onclick="window.dashboard.editPayout(1800,'down')" title="Click to edit">—</span>
+                    </div>
+                    <div class="payout-row" data-dur="3600">
+                        <span class="payout-period">60m</span>
+                        <span class="payout-val payout-up" data-dur="3600" onclick="window.dashboard.editPayout(3600,'up')" title="Click to edit">—</span>
+                        <span class="payout-val payout-dn" data-dur="3600" onclick="window.dashboard.editPayout(3600,'down')" title="Click to edit">—</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

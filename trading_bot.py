@@ -52,6 +52,11 @@ state = {
     "bet": FIXED_BET,           # текущая ставка ($5 по умолчанию)
     "trade_duration": FIXED_TRADE_SECONDS,  # текущая длительность (600 сек = 10 мин)
     "strategy_level": 3,        # уровень стратегии (1-5)
+    "payouts": {
+        "600":  {"up": None, "down": None},
+        "1800": {"up": None, "down": None},
+        "3600": {"up": None, "down": None},
+    },
 }
 
 class TradingBot:

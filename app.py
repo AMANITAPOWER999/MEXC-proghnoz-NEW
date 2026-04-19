@@ -102,6 +102,11 @@ def api_status():
             'bet': state.get('bet', 5.0),
             'trade_duration': state.get('trade_duration', 600),
             'strategy_level': state.get('strategy_level', 3),
+            'payouts': state.get('payouts', {
+                '600':  {'up': None, 'down': None},
+                '1800': {'up': None, 'down': None},
+                '3600': {'up': None, 'down': None},
+            }),
         })
     except Exception as e:
         logging.error(f"Status error: {e}")
@@ -164,6 +169,28 @@ def api_close_position():
     except Exception as e:
         logging.error(f"Close position error: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/set_payout', methods=['POST'])
+def api_set_payout():
+    """Установить процент выплаты для указанного времени и направления"""
+    data = request.get_json() or {}
+    duration = str(data.get('duration', '600'))
+    direction = data.get('direction', 'up')   # 'up' или 'down'
+    value = data.get('value')                 # число или None
+
+    if duration not in ('600', '1800', '3600'):
+        return jsonify({'error': 'Некорректная длительность'}), 400
+    if direction not in ('up', 'down'):
+        return jsonify({'error': 'Некорректное направление'}), 400
+
+    if 'payouts' not in state:
+        state['payouts'] = {'600': {'up': None, 'down': None},
+                            '1800': {'up': None, 'down': None},
+                            '3600': {'up': None, 'down': None}}
+
+    state['payouts'][duration][direction] = float(value) if value is not None else None
+    logging.info(f"Payout {direction} for {duration}s set to {value}%")
+    return jsonify({'payouts': state['payouts']})
 
 @app.route('/api/set_strategy_level', methods=['POST'])
 def api_set_strategy_level():
