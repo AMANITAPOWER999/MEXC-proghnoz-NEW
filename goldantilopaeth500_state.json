@@ -1,22 +1,22 @@
 {
   "balance": 30.0,
-  "available": 30.0,
+  "available": 25.0,
   "positions": [
     {
-      "side": "short",
-      "entry_price": 2084.91,
-      "size_base": 0.0023964953651779636,
+      "side": "long",
+      "entry_price": 2316.73,
+      "size_base": 0.0021582143797507693,
       "notional": 5.0,
-      "entry_time": "2026-03-14T06:25:06.090147",
+      "entry_time": "2026-04-19T08:27:01.891034",
       "close_time_seconds": 600,
-      "trade_number": 50,
+      "trade_number": 51,
       "bet": 5.0
     }
   ],
-  "last_trade_time": "2026-03-14T06:26:31.959636",
-  "last_1m_dir": "short",
+  "last_trade_time": "2026-04-19T08:27:01.891034",
+  "last_1m_dir": "long",
   "one_min_flip_count": 0,
-  "skip_next_signal": false,
+  "skip_next_signal": true,
   "trades": [
     {
       "time": "2026-03-14T06:26:31.959609",
@@ -263,6 +263,6 @@
   "trade_duration": 600,
   "in_position": false,
   "position": null,
-  "last_known_price": 2084.9,
-  "telegram_trade_counter": 50
+  "last_known_price": 2316.73,
+  "telegram_trade_counter": 51
 }

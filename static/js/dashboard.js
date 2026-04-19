@@ -216,6 +216,7 @@ class TradingDashboard {
             // Sync bet/duration buttons with server state
             if (data.bet !== undefined) this.syncBetButtons(data.bet);
             if (data.trade_duration !== undefined) this.syncDurButtons(data.trade_duration);
+            if (data.strategy_level !== undefined) this.syncLevelButtons(data.strategy_level);
 
             this.lastUpdateTime = new Date();
         } catch (error) {
@@ -265,62 +266,105 @@ class TradingDashboard {
         });
     }
 
+    syncLevelButtons(activeLevel) {
+        this._strategyLevel = parseInt(activeLevel);
+        document.querySelectorAll('.lvl-btn').forEach(btn => {
+            const val = parseInt(btn.getAttribute('data-level'));
+            btn.classList.toggle('active-setting', val === this._strategyLevel);
+        });
+        const labels = {
+            1: 'Level 1 — SAR 1m',
+            2: 'Level 2 — SAR 1m+3m',
+            3: 'Level 3 — SAR 1m+3m+5m',
+            4: 'Level 4 — SAR 1m+3m+5m+15m',
+            5: 'Level 5 — SAR 1m+3m+5m+15m+30m',
+        };
+        const lbl = document.getElementById('strategy-level-label');
+        if (lbl) lbl.textContent = labels[this._strategyLevel] || `Level ${this._strategyLevel}`;
+    }
+
+    async setStrategyLevel(level) {
+        try {
+            await fetch('/api/set_strategy_level', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ level })
+            });
+            this.syncLevelButtons(level);
+            // Refresh SAR signal display immediately
+            if (this._lastDirections) this.updateSARDirections(this._lastDirections);
+        } catch (e) {
+            console.error('setStrategyLevel error:', e);
+        }
+    }
+
     updateSARDirections(directions) {
         if (!directions) return;
-        
-        const timeframes = ['1m', '5m', '15m'];
+        this._lastDirections = directions;
+
+        const level = this._strategyLevel || 3;
+        const STRATEGY_TFS = {
+            1: ['1m'],
+            2: ['1m', '3m'],
+            3: ['1m', '3m', '5m'],
+            4: ['1m', '3m', '5m', '15m'],
+            5: ['1m', '3m', '5m', '15m', '30m'],
+        };
+        const requiredTfs = STRATEGY_TFS[level] || STRATEGY_TFS[3];
+        const allTimeframes = ['1m', '3m', '5m', '15m', '30m'];
+
         let allMatch = true;
         let matchDirection = null;
-        
-        timeframes.forEach(tf => {
+
+        allTimeframes.forEach(tf => {
             const element = document.getElementById(`sar-${tf}`);
             const container = document.getElementById(`sar-${tf}-container`);
             const direction = directions[tf];
-            
+            const isRequired = requiredTfs.includes(tf);
+
             if (element && container) {
                 element.className = 'badge sar-badge';
-                
+
+                // Dim rows that are not required by current level
+                container.style.opacity = isRequired ? '1' : '0.35';
+
                 if (direction === 'long') {
                     element.textContent = 'LONG';
                     element.classList.add('bg-success');
                     container.classList.remove('text-danger', 'text-muted');
                     container.classList.add('text-success');
-                    if (matchDirection === null) {
-                        matchDirection = 'long';
-                    } else if (matchDirection !== 'long') {
-                        allMatch = false;
+                    if (isRequired) {
+                        if (matchDirection === null) matchDirection = 'long';
+                        else if (matchDirection !== 'long') allMatch = false;
                     }
                 } else if (direction === 'short') {
                     element.textContent = 'SHORT';
                     element.classList.add('bg-danger');
                     container.classList.remove('text-success', 'text-muted');
                     container.classList.add('text-danger');
-                    if (matchDirection === null) {
-                        matchDirection = 'short';
-                    } else if (matchDirection !== 'short') {
-                        allMatch = false;
+                    if (isRequired) {
+                        if (matchDirection === null) matchDirection = 'short';
+                        else if (matchDirection !== 'short') allMatch = false;
                     }
                 } else {
                     element.textContent = 'N/A';
                     element.classList.add('bg-secondary');
                     container.classList.remove('text-success', 'text-danger');
                     container.classList.add('text-muted');
-                    allMatch = false;
+                    if (isRequired) allMatch = false;
                 }
-            } else {
-                allMatch = false;
             }
         });
-        
+
         // Update signal status
         const signalElement = document.getElementById('signal-status');
         if (signalElement) {
-            if (allMatch && matchDirection) {
+            if (allMatch && matchDirection && requiredTfs.length > 0) {
                 if (matchDirection === 'long') {
-                    signalElement.textContent = 'LONG SIGNAL';
+                    signalElement.textContent = `▲ LONG SIGNAL (L${level})`;
                     signalElement.className = 'badge bg-success signal-badge';
                 } else {
-                    signalElement.textContent = 'SHORT SIGNAL';
+                    signalElement.textContent = `▼ SHORT SIGNAL (L${level})`;
                     signalElement.className = 'badge bg-danger signal-badge';
                 }
             } else {

@@ -84,7 +84,7 @@ def api_status():
         
         # Если bot_instance еще не вернул данные, пробуем взять из state
         if not directions or all(v is None for v in directions.values()):
-            directions = state.get('sar_directions', {tf: None for tf in ['1m', '5m', '15m']})
+            directions = state.get('sar_directions', {tf: None for tf in ['1m', '3m', '5m', '15m', '30m']})
         
         # Получаем текущую цену
         current_price = bot_instance.get_current_price() if bot_instance else 3000.0
@@ -100,7 +100,8 @@ def api_status():
             'sar_directions': directions,
             'trades': state.get('trades', []),
             'bet': state.get('bet', 5.0),
-            'trade_duration': state.get('trade_duration', 600)
+            'trade_duration': state.get('trade_duration', 600),
+            'strategy_level': state.get('strategy_level', 3),
         })
     except Exception as e:
         logging.error(f"Status error: {e}")
@@ -163,6 +164,17 @@ def api_close_position():
     except Exception as e:
         logging.error(f"Close position error: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/set_strategy_level', methods=['POST'])
+def api_set_strategy_level():
+    """Установка уровня стратегии (1-5)"""
+    data = request.get_json() or {}
+    level = int(data.get('level', 3))
+    if level < 1 or level > 5:
+        return jsonify({'error': 'Уровень должен быть от 1 до 5'}), 400
+    state['strategy_level'] = level
+    logging.info(f"Strategy level set to {level}")
+    return jsonify({'strategy_level': level})
 
 @app.route('/api/set_settings', methods=['POST'])
 def api_set_settings():

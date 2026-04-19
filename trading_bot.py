@@ -23,8 +23,17 @@ SYMBOL = "ETH/USDT:USDT"  # MEXC futures symbol format  # инструмент
 LEVERAGE = 1  # No leverage - binary options style
 ISOLATED = True  # изолированная маржа
 FIXED_BET = 5.0  # Fixed $5 bet per trade (binary options)
-TIMEFRAMES = {"1m": 1, "5m": 5, "15m": 15}  # 1m and 15m used for alignment, 5m for info
+TIMEFRAMES = {"1m": 1, "3m": 3, "5m": 5, "15m": 15, "30m": 30}
 FIXED_TRADE_SECONDS = 600  # Fixed 10-minute trade duration
+
+# Таймфреймы, необходимые для сигнала по каждому уровню стратегии
+STRATEGY_TIMEFRAMES = {
+    1: ["1m"],
+    2: ["1m", "3m"],
+    3: ["1m", "3m", "5m"],
+    4: ["1m", "3m", "5m", "15m"],
+    5: ["1m", "3m", "5m", "15m", "30m"],
+}
 MIN_PAYOUT_THRESHOLD = 0.80  # Минимальный процент выплаты для открытия сделки (80%)
 PAUSE_BETWEEN_TRADES = 0  # пауза между сделками убрана
 START_BANK = 100.0  # стартовый банк (для бумажной торговли / учета)
@@ -41,7 +50,8 @@ state = {
     "skip_next_signal": False,  # пропускать следующий сигнал входа
     "trades": [],  # список последних сделок
     "bet": FIXED_BET,           # текущая ставка ($5 по умолчанию)
-    "trade_duration": FIXED_TRADE_SECONDS  # текущая длительность (600 сек = 10 мин)
+    "trade_duration": FIXED_TRADE_SECONDS,  # текущая длительность (600 сек = 10 мин)
+    "strategy_level": 3,        # уровень стратегии (1-5)
 }
 
 class TradingBot:
@@ -467,8 +477,12 @@ class TradingBot:
                     else:
                         dirs[tf] = None
 
-                # пропускаем итерацию, если нет данных
-                if any(d is None for d in dirs.values()):
+                # Определяем необходимые таймфреймы по текущему уровню стратегии
+                level = state.get("strategy_level", 3)
+                required_tfs = STRATEGY_TIMEFRAMES.get(level, STRATEGY_TIMEFRAMES[3])
+
+                # Пропускаем итерацию, если нет данных по обязательным таймфреймам
+                if any(dirs.get(tf) is None for tf in required_tfs):
                     time.sleep(5)
                     continue
 
@@ -477,9 +491,8 @@ class TradingBot:
                     state["last_known_price"] = float(dfs["1m"]["close"].iloc[-1])
 
                 dir_1m = dirs["1m"]
-                dir_15m = dirs["15m"]
                 
-                logging.info(f"[{self.now()}] SAR directions => 1m:{dir_1m} 15m:{dir_15m}")
+                logging.info(f"[{self.now()}] SAR directions => " + " ".join(f"{tf}:{dirs.get(tf)}" for tf in required_tfs))
                 
                 # Store current SAR directions for status reporting
                 self._current_sar_directions = dirs
@@ -493,9 +506,9 @@ class TradingBot:
                     # Принудительное закрытие по фиксированному времени (10 минут = 600 сек)
                     position_close_time = pos.get("close_time_seconds", FIXED_TRADE_SECONDS)
                     if trade_duration >= position_close_time:
-                        logging.info(f"⏱️ Closing position {i} after {trade_duration:.1f}s (10 min limit reached)")
+                        logging.info(f"⏱️ Closing position {i} after {trade_duration:.1f}s (time limit reached)")
                         self.close_position(position_idx=i, close_reason="fixed_time")
-                        state["skip_next_signal"] = True  # устанавливаем флаг пропуска
+                        state["skip_next_signal"] = True
                         self.save_state_to_file()
                 
                 # Отслеживание смены 1m SAR для сброса флага пропуска
@@ -505,31 +518,25 @@ class TradingBot:
                         state["skip_next_signal"] = False
                         self.save_state_to_file()
                 
-                # Убираем вебхук из place_market_order — сигнал уходит через signal_sender
-                
                 # Сохраняем текущее направление для отслеживания смен
                 state["last_1m_dir"] = dir_1m
                 
-                dir_5m = dirs.get("5m")
-                
-                # Вход когда ВСЕ три таймфрейма 1m, 5m и 15m SAR совпадают
+                # Вход когда ВСЕ требуемые таймфреймы уровня стратегии совпадают
                 all_align = (
                     dir_1m in ["long", "short"] and
-                    dir_5m == dir_1m and
-                    dir_15m == dir_1m
+                    all(dirs.get(tf) == dir_1m for tf in required_tfs)
                 )
                 
                 if all_align and not state["skip_next_signal"]:
-                    logging.info(f"✅ Entry signal: 1m=5m=15m SAR = {dir_1m.upper()}")
+                    tfs_str = "=".join(required_tfs)
+                    logging.info(f"✅ Entry signal (Level {level}): {tfs_str} SAR = {dir_1m.upper()}")
                     
                     # вход в позицию
                     side = "buy" if dir_1m == "long" else "sell"
                     price = self.get_current_price()
-                    # compute order size
                     size_base, notional = self.compute_order_size_usdt(state["balance"], price if price > 0 else 1.0)
                     logging.info(f"Signal to OPEN {side} — size_base={size_base:.6f} notional=${notional:.2f} price={price}")
                     
-                    # Place order
                     self.place_market_order(side, amount_base=size_base)
                     
                     # Блокируем повторный вход до следующего флипа 1m SAR
@@ -538,7 +545,7 @@ class TradingBot:
                     self.save_state_to_file()
                     time.sleep(1)
                 elif state["skip_next_signal"] and all_align:
-                    logging.info(f"🔄 Skip flag active: 1m:{dir_1m} 5m:{dir_5m} 15m:{dir_15m} — wait for SAR flip")
+                    logging.info(f"🔄 Skip flag active (Level {level}): {dirs} — wait for SAR flip")
 
                 time.sleep(5)  # маленькая пауза в основном цикле
             except Exception as e:
