@@ -14,12 +14,12 @@ from signal_sender import SignalSender
 # Google Sheets integration removed
 
 # ========== Конфигурация ==========
-API_KEY = os.getenv("ASCENDEX_API_KEY", "")
-API_SECRET = os.getenv("ASCENDEX_SECRET", "")
+API_KEY = os.getenv("MEXC_API_KEY", "")
+API_SECRET = os.getenv("MEXC_SECRET", "")
 RUN_IN_PAPER = os.getenv("RUN_IN_PAPER", "1") == "1"
-USE_SIMULATOR = os.getenv("USE_SIMULATOR", "0") == "1"  # Переключаемся на реальные данные с новыми API ключами
+USE_SIMULATOR = os.getenv("USE_SIMULATOR", "0") == "1"
 
-SYMBOL = "ETH/USDT:USDT"  # ASCENDEX futures symbol format  # инструмент
+SYMBOL = "ETH/USDT:USDT"  # MEXC futures symbol format  # инструмент
 LEVERAGE = 1  # No leverage - binary options style
 ISOLATED = True  # изолированная маржа
 FIXED_BET = 5.0  # Fixed $5 bet per trade (binary options)
@@ -56,18 +56,18 @@ class TradingBot:
             self.simulator = MarketSimulator(initial_price=60000, volatility=0.02)
             self.exchange = None
         else:
-            logging.info("Initializing ASCENDEX exchange connection")
+            logging.info("Initializing MEXC exchange connection")
             self.simulator = None
-            self.exchange = ccxt.ascendex({
+            self.exchange = ccxt.mexc({
                 "apiKey": API_KEY,
                 "secret": API_SECRET,
                 "sandbox": False,
                 "enableRateLimit": True,
                 "options": {
-                    "defaultType": "swap",  # Enable futures/swap trading for leverage
+                    "defaultType": "swap",
                 }
             })
-            logging.info("ASCENDEX configured for swap/futures trading with leverage support")
+            logging.info("MEXC configured for swap/futures trading")
             
             # Configure leverage and margin mode during initialization
             if API_KEY and API_SECRET:
