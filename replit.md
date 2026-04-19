@@ -1,79 +1,56 @@
-# Overview
+# Binary Options Trading Bot (ETH/USDT)
 
-This project is a binary options trading bot for ETH/USDT that uses a Parabolic SAR (SAR) indicator strategy to generate trading signals. The system includes a Flask-based web dashboard for monitoring, real-time Telegram notifications, and a market simulator for testing. The bot operates as a fixed $5 bet system with 10-minute trades.
+## Overview
+A trading bot that automates Binary Options trades on the ETH/USDT pair using the Parabolic SAR (PSAR) strategy across multiple timeframes. Includes a real-time web dashboard and optional Telegram integration.
 
-# User Preferences
+## Architecture
 
-Preferred communication style: Simple, everyday language.
+### Backend (Python/Flask)
+- **main.py** — Entry point, imports Flask app
+- **app.py** — Flask web server, REST API endpoints, bot lifecycle management
+- **trading_bot.py** — Core trading logic, Parabolic SAR calculations, strategy loop
+- **market_simulator.py** — Simulated market data (used when `USE_SIMULATOR=1`)
+- **telegram_notifications.py** — Telegram alerts and message handling
+- **telegram_bot_handler.py** — Telegram WebApp setup
+- **signal_sender.py** — External webhook/signal sender
 
-# System Architecture
+### Frontend (Vanilla JS + Bootstrap 5)
+- **templates/dashboard.html** — Main monitoring dashboard
+- **templates/webapp.html** — Telegram WebApp interface
+- **static/css/** — Stylesheets
+- **static/js/** — JavaScript files including dashboard.js
 
-## Frontend Architecture
-- **Framework**: Vanilla JavaScript with Bootstrap 5
-- **Design Pattern**: Single Page Application (SPA) with polling for real-time updates (every 3 seconds)
-- **UI Components**: Dark theme trading dashboard with:
-  - Balance display and current price
-  - Active position with 10-minute countdown timer
-  - Real-time profit/loss status indicator (green if in profit, red if in loss)
-  - SAR indicators (1m/5m/15m) for reference
-  - Trade entry signals based on 1m+15m alignment
-  - Trade history
-- **Result Modal**: WIN/LOSE outcome window showing trade result and P&L
+### State Persistence
+- JSON file: `goldantilopaeth500_state.json` — Stores balance, positions, trade history
 
-## Backend Architecture
-- **Framework**: Flask with Python
-- **Design Pattern**: Modular architecture separating trading logic, notifications, and web interface
-- **Core Components**:
-    - `TradingBot` class: Manages exchange integration, SAR calculations, and position management
-    - `MarketSimulator` class: Provides realistic market data
-    - `TelegramNotifier` class: Handles Telegram notification delivery
-    - Flask app: Serves the web dashboard and REST API endpoints
-- **Threading Model**: A main Flask thread and a background trading thread ensure continuous market monitoring
+## Tech Stack
+- **Runtime**: Python 3.11+
+- **Package Manager**: uv
+- **Web Framework**: Flask + Gunicorn
+- **Trading**: CCXT (Ascendex exchange), TA library (Parabolic SAR), Pandas
+- **Frontend**: Vanilla JS, Bootstrap 5, Font Awesome
+- **Notifications**: Telegram Bot API
 
-## Trading Strategy - Binary Options Style
-- **Algorithm**: Parabolic SAR strategy (SAR only)
-- **Entry Condition**: A position is opened when 1m and 15m SAR directions align (both LONG or both SHORT)
-- **Exit Condition**: Position is closed after exactly 10 minutes
-- **Position Monitoring**: Real-time display shows:
-  - Entry and current prices
-  - Countdown timer (starts from 10:00, counts down to 0:00)
-  - Status indicator (✓ IN PROFIT / ✗ IN LOSS) updated every second
-- **Bet System**: 
-    - Fixed $5 bet per trade (no leverage)
-    - WIN: Price goes up for LONG or down for SHORT → +80% profit ($4 gain)
-    - LOSE: Price goes down for LONG or up for SHORT → -100% loss (lose the $5 bet)
-- **Position Limit**: Only 1 position can be open at a time
-- **Operating Mode**: Paper trading mode with starting bank of $100
-- **Instrument**: ETH/USDT
+## Trading Strategy
+- **Timeframes**: 1m, 5m, 15m
+- **Entry Signal**: SAR direction aligns across all three timeframes
+- **Exit**: Fixed duration (default 10 minutes) — Binary Options model
+- **Bet**: Fixed $5 per trade; win = +$4 (80%), loss = -$5 (100%)
+- **Modes**: Paper Trading (default) and Live Trading (via Ascendex)
 
-## Data Storage
-- **State Persistence**: Bot state and trading history stored in JSON files
-- **In-Memory Storage**: A global state dictionary facilitates real-time data sharing
-- **Trades Array**: Maintains recent trade history for dashboard display
+## Running the App
+- **Workflow**: `Start application` runs `gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app`
+- **Port**: 5000
 
-## Authentication & Security
-- **API Security**: API keys for exchange integration managed via environment variables
-- **Session Management**: Flask secret key used for basic session security
-- **Dashboard Control**: No password protection on control buttons (manual close position, reset balance, etc.)
+## Environment Variables (Optional)
+- `TELEGRAM_BOT_TOKEN` — Telegram bot token for notifications
+- `TELEGRAM_CHAT_ID` — Telegram chat/channel ID
+- `TELEGRAM_OWNER_ID` — Telegram owner user ID
+- `SESSION_SECRET` — Flask session secret (auto-generated if not set)
+- `DASHBOARD_PASSWORD` — Optional password to protect dashboard
+- `RUN_IN_PAPER` — Set to `0` for live trading (default `1` = paper mode)
+- `USE_SIMULATOR` — Set to `1` to use simulated market data
 
-# External Dependencies
-
-## Trading Exchange
-- **ASCENDEX API**: Used for cryptocurrency exchange integration (can be disabled for paper trading)
-- **ccxt library**: Employed for unified exchange API interaction
-
-## Notification Services
-- **Telegram Bot API**: Used for real-time trade notifications (optional)
-
-## Technical Analysis
-- **Python TA library**: Utilized for Parabolic SAR indicator calculations (PSARIndicator)
-- **Pandas**: Used for OHLCV data processing across 1m, 5m, and 15m timeframes
-
-## Frontend Libraries
-- **Bootstrap 5**: Provides the CSS framework for responsive UI design
-- **Font Awesome**: Supplies icon library for UI elements
-
-## Python Libraries
-- **Flask**: The web framework underpinning the dashboard and API
-- **Requests**: Used for HTTP client operations, particularly for webhook calls
-- **Threading**: Python's built-in threading for managing background processes
+## Deployment
+- **Target**: VM (always-running, maintains in-memory state)
+- **Run command**: `gunicorn --bind=0.0.0.0:5000 --reuse-port main:app`
