@@ -107,6 +107,7 @@ def api_status():
                 '1800': {'up': None, 'down': None},
                 '3600': {'up': None, 'down': None},
             }),
+            'payout_updated_at': state.get('payout_updated_at'),
         })
     except Exception as e:
         logging.error(f"Status error: {e}")
@@ -189,8 +190,21 @@ def api_set_payout():
                             '3600': {'up': None, 'down': None}}
 
     state['payouts'][duration][direction] = float(value) if value is not None else None
+    state['payout_updated_at'] = datetime.utcnow().isoformat()
+
+    # Сохраняем в файл немедленно
+    if bot_instance:
+        bot_instance.save_state_to_file()
+    else:
+        try:
+            import json
+            with open("goldantilopaeth500_state.json", "w") as f:
+                json.dump(state, f, default=str, indent=2)
+        except Exception as e:
+            logging.error(f"Payout save error: {e}")
+
     logging.info(f"Payout {direction} for {duration}s set to {value}%")
-    return jsonify({'payouts': state['payouts']})
+    return jsonify({'payouts': state['payouts'], 'payout_updated_at': state.get('payout_updated_at')})
 
 @app.route('/api/set_strategy_level', methods=['POST'])
 def api_set_strategy_level():
