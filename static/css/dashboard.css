@@ -62,9 +62,17 @@ h1,h2,h3,h4,h5,h6,p,span,td,th,strong,small,label { color: inherit; }
 .top-bar__logo {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex: 1;
     min-width: 180px;
+}
+
+.top-bar__logo-img {
+    height: 36px;
+    width: auto;
+    border-radius: 6px;
+    object-fit: cover;
+    object-position: center top;
 }
 
 .top-bar__title {
