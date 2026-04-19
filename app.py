@@ -102,6 +102,7 @@ def api_status():
             'bet': state.get('bet', 5.0),
             'trade_duration': state.get('trade_duration', 600),
             'strategy_level': state.get('strategy_level', 3),
+            'strategy_tfs': state.get('strategy_tfs', ['1m', '3m', '5m']),
             'payouts': state.get('payouts', {
                 '600':  {'up': None, 'down': None},
                 '1800': {'up': None, 'down': None},
@@ -208,14 +209,36 @@ def api_set_payout():
 
 @app.route('/api/set_strategy_level', methods=['POST'])
 def api_set_strategy_level():
-    """Установка уровня стратегии (1-5)"""
+    """Установка уровня стратегии (1-5) — legacy"""
     data = request.get_json() or {}
     level = int(data.get('level', 3))
     if level < 1 or level > 5:
         return jsonify({'error': 'Уровень должен быть от 1 до 5'}), 400
+    from trading_bot import STRATEGY_TIMEFRAMES
     state['strategy_level'] = level
-    logging.info(f"Strategy level set to {level}")
-    return jsonify({'strategy_level': level})
+    state['strategy_tfs'] = list(STRATEGY_TIMEFRAMES.get(level, STRATEGY_TIMEFRAMES[3]))
+    logging.info(f"Strategy level set to {level} => tfs={state['strategy_tfs']}")
+    return jsonify({'strategy_level': level, 'strategy_tfs': state['strategy_tfs']})
+
+@app.route('/api/set_strategy_tfs', methods=['POST'])
+def api_set_strategy_tfs():
+    """Установка произвольного набора таймфреймов стратегии"""
+    VALID_TFS = ['1m', '3m', '5m', '15m', '30m']
+    data = request.get_json() or {}
+    tfs = data.get('tfs', [])
+    if not isinstance(tfs, list) or not tfs:
+        return jsonify({'error': 'tfs должен быть непустым массивом'}), 400
+    tfs = [t for t in tfs if t in VALID_TFS]
+    if not tfs:
+        return jsonify({'error': 'Нет допустимых таймфреймов'}), 400
+    # Сортируем по порядку
+    order = {tf: i for i, tf in enumerate(VALID_TFS)}
+    tfs = sorted(tfs, key=lambda t: order.get(t, 99))
+    state['strategy_tfs'] = tfs
+    # Обновляем legacy level для совместимости
+    state['strategy_level'] = 0
+    logging.info(f"Strategy TFs set to {tfs}")
+    return jsonify({'strategy_tfs': tfs})
 
 @app.route('/api/set_settings', methods=['POST'])
 def api_set_settings():

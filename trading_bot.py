@@ -51,7 +51,8 @@ state = {
     "trades": [],  # список последних сделок
     "bet": FIXED_BET,           # текущая ставка ($5 по умолчанию)
     "trade_duration": FIXED_TRADE_SECONDS,  # текущая длительность (600 сек = 10 мин)
-    "strategy_level": 3,        # уровень стратегии (1-5)
+    "strategy_level": 3,        # уровень стратегии (1-5, legacy)
+    "strategy_tfs": ["1m", "3m", "5m"],  # активные таймфреймы (мультивыбор)
     "payouts": {
         "600":  {"up": None, "down": None},
         "1800": {"up": None, "down": None},
@@ -482,9 +483,13 @@ class TradingBot:
                     else:
                         dirs[tf] = None
 
-                # Определяем необходимые таймфреймы по текущему уровню стратегии
-                level = state.get("strategy_level", 3)
-                required_tfs = STRATEGY_TIMEFRAMES.get(level, STRATEGY_TIMEFRAMES[3])
+                # Определяем необходимые таймфреймы: сначала мультивыбор, иначе уровень
+                if state.get("strategy_tfs"):
+                    required_tfs = state["strategy_tfs"]
+                    level = None
+                else:
+                    level = state.get("strategy_level", 3)
+                    required_tfs = STRATEGY_TIMEFRAMES.get(level, STRATEGY_TIMEFRAMES[3])
 
                 # Пропускаем итерацию, если нет данных по обязательным таймфреймам
                 if any(dirs.get(tf) is None for tf in required_tfs):
@@ -497,7 +502,8 @@ class TradingBot:
 
                 dir_1m = dirs["1m"]
                 
-                logging.info(f"[{self.now()}] SAR directions => " + " ".join(f"{tf}:{dirs.get(tf)}" for tf in required_tfs))
+                tfs_label = "+".join(required_tfs)
+                logging.info(f"[{self.now()}] SAR directions [{tfs_label}] => " + " ".join(f"{tf}:{dirs.get(tf)}" for tf in required_tfs))
                 
                 # Store current SAR directions for status reporting
                 self._current_sar_directions = dirs
@@ -533,8 +539,7 @@ class TradingBot:
                 )
                 
                 if all_align and not state["skip_next_signal"]:
-                    tfs_str = "=".join(required_tfs)
-                    logging.info(f"✅ Entry signal (Level {level}): {tfs_str} SAR = {dir_1m.upper()}")
+                    logging.info(f"✅ Entry signal [{tfs_label}] SAR = {dir_1m.upper()}")
                     
                     # вход в позицию
                     side = "buy" if dir_1m == "long" else "sell"
@@ -550,7 +555,7 @@ class TradingBot:
                     self.save_state_to_file()
                     time.sleep(1)
                 elif state["skip_next_signal"] and all_align:
-                    logging.info(f"🔄 Skip flag active (Level {level}): {dirs} — wait for SAR flip")
+                    logging.info(f"🔄 Skip flag active [{tfs_label}]: {dirs} — wait for SAR flip")
 
                 time.sleep(5)  # маленькая пауза в основном цикле
             except Exception as e:

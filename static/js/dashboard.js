@@ -3,6 +3,7 @@ class TradingDashboard {
         this.lastUpdateTime = null;
         this.isUpdating = false;
         this._strategyLevel = 3;
+        this._strategyTfs = ['1m', '3m', '5m'];
         this._lastDirections = null;
         this._lastSignal = null;
         this._payouts = { '600': { up: null, down: null }, '1800': { up: null, down: null }, '3600': { up: null, down: null } };
@@ -214,7 +215,8 @@ class TradingDashboard {
                 this.syncDurButtons(data.trade_duration);
                 this._highlightActivePayoutRow();
             }
-            if (data.strategy_level !== undefined) this.syncLevelButtons(data.strategy_level);
+            if (data.strategy_tfs) this.syncTfButtons(data.strategy_tfs);
+            else if (data.strategy_level !== undefined) this.syncLevelButtons(data.strategy_level);
 
             // SAR directions
             if (data.sar_directions) this.updateSARDirections(data.sar_directions);
@@ -282,29 +284,59 @@ class TradingDashboard {
         });
     }
 
-    syncLevelButtons(activeLevel) {
-        this._strategyLevel = parseInt(activeLevel);
+    syncTfButtons(activeTfs) {
+        this._strategyTfs = Array.isArray(activeTfs) ? activeTfs : ['1m', '3m', '5m'];
+        const TF_MAP = { '1m': 'L1', '3m': 'L2', '5m': 'L3', '15m': 'L4', '30m': 'L5' };
         document.querySelectorAll('.lvl-btn--inline').forEach(btn => {
-            btn.classList.toggle('active-setting', parseInt(btn.dataset.level) === this._strategyLevel);
+            btn.classList.toggle('active-setting', this._strategyTfs.includes(btn.dataset.tf));
         });
-        const labels = {
-            1: 'L1 · 1m',
-            2: 'L2 · 1m+3m',
-            3: 'L3 · 1m+3m+5m',
-            4: 'L4 · 1m…15m',
-            5: 'L5 · все ТФ',
-        };
         const lbl = document.getElementById('strategy-level-label');
-        if (lbl) lbl.textContent = labels[this._strategyLevel] || `L${this._strategyLevel}`;
+        if (lbl) {
+            if (this._strategyTfs.length === 0) {
+                lbl.textContent = 'нет ТФ';
+            } else {
+                lbl.textContent = this._strategyTfs.map(t => TF_MAP[t] || t).join('+') + ' · ' + this._strategyTfs.join('+');
+            }
+        }
+    }
+
+    syncLevelButtons(activeLevel) {
+        const TF_BY_LEVEL = {
+            1: ['1m'], 2: ['1m', '3m'], 3: ['1m', '3m', '5m'],
+            4: ['1m', '3m', '5m', '15m'], 5: ['1m', '3m', '5m', '15m', '30m']
+        };
+        this.syncTfButtons(TF_BY_LEVEL[parseInt(activeLevel)] || TF_BY_LEVEL[3]);
+    }
+
+    async toggleStrategyTf(tf) {
+        const idx = this._strategyTfs.indexOf(tf);
+        let newTfs;
+        if (idx === -1) {
+            newTfs = [...this._strategyTfs, tf];
+        } else {
+            newTfs = this._strategyTfs.filter(t => t !== tf);
+        }
+        if (newTfs.length === 0) return; // минимум 1 ТФ
+        const ORDER = ['1m', '3m', '5m', '15m', '30m'];
+        newTfs = newTfs.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
+        const res = await fetch('/api/set_strategy_tfs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tfs: newTfs })
+        });
+        const data = await res.json();
+        this.syncTfButtons(data.strategy_tfs || newTfs);
+        if (this._lastDirections) this.updateSARDirections(this._lastDirections);
     }
 
     async setStrategyLevel(level) {
-        await fetch('/api/set_strategy_level', {
+        const res = await fetch('/api/set_strategy_level', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ level })
         });
-        this.syncLevelButtons(level);
+        const data = await res.json();
+        this.syncTfButtons(data.strategy_tfs || null);
         if (this._lastDirections) this.updateSARDirections(this._lastDirections);
     }
 
@@ -313,15 +345,9 @@ class TradingDashboard {
         if (!directions) return;
         this._lastDirections = directions;
 
-        const level = this._strategyLevel || 3;
-        const STRATEGY_TFS = {
-            1: ['1m'],
-            2: ['1m', '3m'],
-            3: ['1m', '3m', '5m'],
-            4: ['1m', '3m', '5m', '15m'],
-            5: ['1m', '3m', '5m', '15m', '30m'],
-        };
-        const requiredTfs = STRATEGY_TFS[level] || STRATEGY_TFS[3];
+        const requiredTfs = this._strategyTfs && this._strategyTfs.length > 0
+            ? this._strategyTfs
+            : ['1m', '3m', '5m'];
         const allTimeframes = ['1m', '3m', '5m', '15m', '30m'];
 
         let allMatch = true;
@@ -373,12 +399,12 @@ class TradingDashboard {
         this._lastSignal = signalDir;
 
         if (signalDir && signalDir !== prevSignal) {
-            this._onNewSignal(signalDir, level);
+            this._onNewSignal(signalDir);
         } else if (!signalDir && prevSignal) {
             this._onSignalLost();
         }
 
-        this._updateHeroSignal(signalDir, level);
+        this._updateHeroSignal(signalDir);
         this._updateHeroPayoutBlock();
     }
 
@@ -399,7 +425,7 @@ class TradingDashboard {
         }
     }
 
-    _onNewSignal(dir, level) {
+    _onNewSignal(dir) {
         // Flash the hero block
         const hero = document.getElementById('signal-hero');
         if (hero) {
@@ -413,7 +439,8 @@ class TradingDashboard {
         // Show notification
         const dirLabel = dir === 'long' ? '▲ UP / LONG' : '▼ DOWN / SHORT';
         const durLabel = { 600: '10m', 1800: '30m', 3600: '60m' }[this._activeDuration] || '';
-        this.showNotification('signal', `🔔 Сигнал ${dirLabel} (L${level}) — время ${durLabel}`, 8000);
+        const tfsLabel = (this._strategyTfs || []).join('+') || '?';
+        this.showNotification('signal', `🔔 Сигнал ${dirLabel} [${tfsLabel}] — время ${durLabel}`, 8000);
     }
 
     _onSignalLost() {
