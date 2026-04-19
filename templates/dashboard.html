@@ -35,30 +35,6 @@
         </div>
     </div>
 
-    <!-- ═══ SIGNAL HERO — главный блок для ручной торговли ═══ -->
-    <div id="signal-hero" class="signal-hero mb-3">
-        <div class="signal-hero__side">
-            <div class="signal-hero__price-label">ETH/USDT</div>
-            <div class="signal-hero__price" id="hero-price">$0.00</div>
-        </div>
-        <div class="signal-hero__center">
-            <div id="hero-signal" class="hero-signal hero-signal--idle">
-                <span class="hero-signal__icon">—</span>
-                <span class="hero-signal__text">НЕТ СИГНАЛА</span>
-            </div>
-            <div id="hero-payout" class="hero-payout d-none">
-                <span id="hero-payout-val" class="hero-payout__val">—</span>
-                <span class="hero-payout__label">выплата</span>
-            </div>
-        </div>
-        <div class="signal-hero__side signal-hero__side--right">
-            <a href="https://www.mexc.com/futures/event-futures/ETH_USDT" target="_blank" rel="noopener"
-               class="mexc-btn">
-                <i class="fas fa-external-link-alt"></i>
-                <span>MEXC<br><small>Event Futures</small></span>
-            </a>
-        </div>
-    </div>
 
     <!-- ═══ STATS + SETTINGS ROW ═══ -->
     <div class="row g-3 mb-3">
@@ -170,90 +146,6 @@
                 </div>
             </div>
 
-            <!-- Payout Panel -->
-            <div class="panel">
-                <div class="panel__header">
-                    <span><i class="fas fa-percent"></i> Выплаты Event Futures</span>
-                    <a href="https://www.mexc.com/futures/event-futures/ETH_USDT" target="_blank"
-                       class="ctrl-btn ctrl-btn--ghost ctrl-btn--sm" style="text-decoration:none">
-                        <i class="fas fa-external-link-alt"></i> MEXC
-                    </a>
-                </div>
-                <div class="panel__body p-0">
-                    <div class="payout-grid">
-                        <div class="payout-grid__header">
-                            <span>Период</span>
-                            <span class="text-success">▲ UP %</span>
-                            <span class="text-danger">▼ DOWN %</span>
-                        </div>
-
-                        <div class="payout-grid__row" id="prow-600">
-                            <span class="payout-period-lbl">10 мин</span>
-                            <div class="payout-input-wrap">
-                                <input type="number" class="payout-input payout-input--up"
-                                       id="pout-600-up" min="0" max="100" step="0.1"
-                                       placeholder="—"
-                                       onchange="window.dashboard.savePayout(600,'up',this.value)"
-                                       title="Введите % выплаты UP для 10m">
-                                <span class="payout-pct">%</span>
-                            </div>
-                            <div class="payout-input-wrap">
-                                <input type="number" class="payout-input payout-input--down"
-                                       id="pout-600-down" min="0" max="100" step="0.1"
-                                       placeholder="—"
-                                       onchange="window.dashboard.savePayout(600,'down',this.value)"
-                                       title="Введите % выплаты DOWN для 10m">
-                                <span class="payout-pct">%</span>
-                            </div>
-                        </div>
-
-                        <div class="payout-grid__row" id="prow-1800">
-                            <span class="payout-period-lbl">30 мин</span>
-                            <div class="payout-input-wrap">
-                                <input type="number" class="payout-input payout-input--up"
-                                       id="pout-1800-up" min="0" max="100" step="0.1"
-                                       placeholder="—"
-                                       onchange="window.dashboard.savePayout(1800,'up',this.value)"
-                                       title="Введите % выплаты UP для 30m">
-                                <span class="payout-pct">%</span>
-                            </div>
-                            <div class="payout-input-wrap">
-                                <input type="number" class="payout-input payout-input--down"
-                                       id="pout-1800-down" min="0" max="100" step="0.1"
-                                       placeholder="—"
-                                       onchange="window.dashboard.savePayout(1800,'down',this.value)"
-                                       title="Введите % выплаты DOWN для 30m">
-                                <span class="payout-pct">%</span>
-                            </div>
-                        </div>
-
-                        <div class="payout-grid__row" id="prow-3600">
-                            <span class="payout-period-lbl">60 мин</span>
-                            <div class="payout-input-wrap">
-                                <input type="number" class="payout-input payout-input--up"
-                                       id="pout-3600-up" min="0" max="100" step="0.1"
-                                       placeholder="—"
-                                       onchange="window.dashboard.savePayout(3600,'up',this.value)"
-                                       title="Введите % выплаты UP для 60m">
-                                <span class="payout-pct">%</span>
-                            </div>
-                            <div class="payout-input-wrap">
-                                <input type="number" class="payout-input payout-input--down"
-                                       id="pout-3600-down" min="0" max="100" step="0.1"
-                                       placeholder="—"
-                                       onchange="window.dashboard.savePayout(3600,'down',this.value)"
-                                       title="Введите % выплаты DOWN для 60m">
-                                <span class="payout-pct">%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="payout-footer">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Смотрите актуальные % на MEXC и вводите вручную
-                        <span id="payout-updated" class="payout-updated-time"></span>
-                    </div>
-                </div>
-            </div>
 
             <!-- Trade History -->
             <div class="panel flex-grow-1">
